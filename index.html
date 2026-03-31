@@ -1,60 +1,282 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>XTC校验码计算器</title>
-  </head>
-  <body>
-    <div id="app">
-      <div class="container">
-        <div class="header">
-          <h1>XTC校验码计算器</h1>
-        </div>
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>XTC校验码计算器</title>
+  <style>
+    /* ----- RESET & 基础样式 (简洁、只改UI，不动功能) ----- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-        <div class="input-group">
-          <label for="codeInput" class="label">输入校验码：</label>
-          <input 
-            type="text" 
-            id="codeInput" 
-            class="input-field" 
-            placeholder="请输入校验码..."
-            maxlength="20"
-          >
-        </div>
+    body {
+      background: #eef2f5;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      line-height: 1.4;
+      padding: 24px 16px;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
 
-        <div class="mode-selector">
-          <button type="button" class="mode-button active" data-mode="adb">
-            ADB
-          </button>
-          <button type="button" class="mode-button" data-mode="zj">
-            自检
-          </button>
-        </div>
+    /* 主容器卡片风格 (干净、清晰) */
+    .container {
+      max-width: 560px;
+      width: 100%;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 28px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05), 0 2px 4px rgba(0, 0, 0, 0.02);
+      overflow: hidden;
+      padding: 24px 24px 28px;
+      transition: all 0.2s;
+    }
 
-        <button type="button" class="calculate-button" id="calculateBtn">
-          计算
+    /* 头部 */
+    .header h1 {
+      font-size: 1.75rem;
+      font-weight: 600;
+      color: #1a2c3e;
+      letter-spacing: -0.3px;
+      margin-bottom: 24px;
+      text-align: center;
+      background: linear-gradient(135deg, #1e3c4c 0%, #2b5c6f 100%);
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+    }
+
+    /* 输入组 */
+    .input-group {
+      margin-bottom: 22px;
+    }
+
+    .label {
+      display: block;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: #2c3e44;
+      margin-bottom: 8px;
+      letter-spacing: -0.2px;
+    }
+
+    .input-field {
+      width: 100%;
+      padding: 14px 18px;
+      font-size: 1rem;
+      font-family: inherit;
+      border: 1.5px solid #dce5e9;
+      border-radius: 20px;
+      background-color: #ffffff;
+      transition: 0.2s;
+      outline: none;
+      color: #1e2f3a;
+      font-weight: 500;
+    }
+
+    .input-field:focus {
+      border-color: #3f8faa;
+      box-shadow: 0 0 0 3px rgba(63, 143, 170, 0.15);
+    }
+
+    .input-field::placeholder {
+      color: #a6bbc8;
+      font-weight: normal;
+    }
+
+    /* 模式切换按钮组 (双按钮) */
+    .mode-selector {
+      display: flex;
+      gap: 14px;
+      margin-bottom: 28px;
+      background: #f0f4f7;
+      padding: 6px;
+      border-radius: 60px;
+    }
+
+    .mode-button {
+      flex: 1;
+      text-align: center;
+      background: transparent;
+      border: none;
+      padding: 10px 0;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 40px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: inherit;
+      color: #4a6270;
+      background-color: transparent;
+    }
+
+    .mode-button.active {
+      background-color: #ffffff;
+      color: #1f6e84;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.05);
+      border: 0.5px solid #e2edf2;
+    }
+
+    .mode-button:active {
+      transform: scale(0.97);
+    }
+
+    /* 主计算按钮 */
+    .calculate-button {
+      width: 100%;
+      background: #216c7e;
+      border: none;
+      padding: 14px 0;
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: white;
+      border-radius: 44px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.2s, transform 0.05s;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 6px rgba(33, 108, 126, 0.2);
+    }
+
+    .calculate-button:hover {
+      background: #1a5a6b;
+    }
+
+    .calculate-button:active {
+      transform: scale(0.98);
+    }
+
+    /* 结果区域 */
+    .result-container {
+      background: #f6fafc;
+      border-radius: 24px;
+      padding: 18px 20px;
+      margin-bottom: 22px;
+      border-left: 5px solid #2b8faa;
+      transition: 0.1s;
+    }
+
+    .result-container.hidden {
+      display: none;
+    }
+
+    .result-title {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 600;
+      color: #2f7e94;
+      margin-bottom: 8px;
+    }
+
+    .result-value {
+      font-size: 1.7rem;
+      font-weight: 700;
+      font-family: 'SF Mono', 'JetBrains Mono', monospace;
+      color: #1c4e5e;
+      word-break: break-all;
+      line-height: 1.3;
+    }
+
+    /* v3 提示区域 */
+    .v3Tips {
+      background: #fef7e0;
+      border-radius: 20px;
+      padding: 14px 18px;
+      margin-top: 6px;
+      margin-bottom: 20px;
+      border: 1px solid #ffe3a3;
+    }
+
+    .v3Tips h3 {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #b45f1b;
+      margin-bottom: 6px;
+      letter-spacing: 0.3px;
+    }
+
+    .v3Tips p {
+      font-size: 0.8rem;
+      color: #8b6b3c;
+      margin: 4px 0;
+      line-height: 1.4;
+    }
+
+    /* footer 出品 */
+    .footer {
+      text-align: center;
+      margin-top: 8px;
+      font-size: 0.7rem;
+      color: #8fa6b2;
+      border-top: 1px solid #e7eef2;
+      padding-top: 18px;
+    }
+
+    .footer p {
+      margin: 0;
+    }
+
+    /* 保持原有点击区域无额外影响 */
+    button {
+      user-select: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="container">
+      <div class="header">
+        <h1>XTC校验码计算器</h1>
+      </div>
+
+      <div class="input-group">
+        <label for="codeInput" class="label">输入校验码：</label>
+        <input 
+          type="text" 
+          id="codeInput" 
+          class="input-field" 
+          placeholder="请输入校验码..."
+          maxlength="20"
+        >
+      </div>
+
+      <div class="mode-selector">
+        <button type="button" class="mode-button active" data-mode="adb">
+          ADB
         </button>
+        <button type="button" class="mode-button" data-mode="zj">
+          自检
+        </button>
+      </div>
 
-        <div id="resultContainer" class="result-container hidden">
-          <div class="result-title" id="resultTitle"></div>
-          <div class="result-value" id="resultValue"></div>
-        </div>
+      <button type="button" class="calculate-button" id="calculateBtn">
+        计算
+      </button>
 
-        <div class="v3Tips">
-          <h3>提示</h3>
-          <p>
-            如果提示验证中，说明为V3
-          </p>
-          <p>请超恢后再试</p>
-        </div>
+      <div id="resultContainer" class="result-container hidden">
+        <div class="result-title" id="resultTitle"></div>
+        <div class="result-value" id="resultValue"></div>
+      </div>
 
-        <div class="footer">
-          <p>Qmoo出品 必属精品</p>
-        </div>
+      <div class="v3Tips">
+        <h3>提示</h3>
+        <p>
+          如果提示验证中，说明为V3
+        </p>
+        <p>请超恢后再试</p>
+      </div>
+
+      <div class="footer">
+        <p>Qmoo出品 必属精品</p>
       </div>
     </div>
-    <script type="module" src="/src/main.ts"></script>
-  </body>
+  </div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
 </html>
